@@ -6,25 +6,49 @@ import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
 public class SimpleHttpClientImplUnitTest {
 
 	@Mock
 	private CloseableHttpClient mockHttpClient;
+	@Mock
+	private CloseableHttpResponse mockResponse;
 
 	private SimpleHttpClient simpleHttpClient;
+	private SimpleHttpRequest request;
+	private SimpleHttpResponse response;
 
 	@Before
-	public void before() {
+	public void before() throws Exception {
+		MockitoAnnotations.initMocks(this);
 		simpleHttpClient = new SimpleHttpClientImpl();
 		ReflectionTestUtils.setField(simpleHttpClient, "httpClient", mockHttpClient);
+
+		request = new SimpleHttpRequest();
+		request.setUri("uri");
+		when(mockHttpClient.execute(any(HttpUriRequest.class))).thenReturn(mockResponse);
+		StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
+		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
+		when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+		response = new SimpleHttpResponse();
+		response.setStatusCode(HttpStatus.SC_OK);
 	}
 
 	@Test (expected = IllegalArgumentException.class)
@@ -77,5 +101,71 @@ public class SimpleHttpClientImplUnitTest {
 		SimpleHttpRequest request = new SimpleHttpRequest();
 		request.setUri("uri");
 		SimpleHttpClientImpl.validateSimpleHttpRequest(request);
+	}
+
+	@Test
+	public void testGet() throws Exception {
+		assertEquals(response, simpleHttpClient.get(request));
+		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpGet captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testPostWithNullBody() throws Exception {
+		assertEquals(response, simpleHttpClient.post(request, null));
+		ArgumentCaptor<HttpPost> captor = ArgumentCaptor.forClass(HttpPost.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpPost captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertNull(captured.getEntity());
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testPost() throws Exception {
+		String body = "body";
+		assertEquals(response, simpleHttpClient.post(request, body));
+		ArgumentCaptor<HttpPost> captor = ArgumentCaptor.forClass(HttpPost.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpPost captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertEquals(body, EntityUtils.toString(captured.getEntity()));
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testPutWithNullBody() throws Exception {
+		assertEquals(response, simpleHttpClient.put(request, null));
+		ArgumentCaptor<HttpPut> captor = ArgumentCaptor.forClass(HttpPut.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpPut captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertNull(captured.getEntity());
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testPut() throws Exception {
+		String body = "body";
+		assertEquals(response, simpleHttpClient.put(request, body));
+		ArgumentCaptor<HttpPut> captor = ArgumentCaptor.forClass(HttpPut.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpPut captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertEquals(body, EntityUtils.toString(captured.getEntity()));
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testDelete() throws Exception {
+		simpleHttpClient.delete(request);
+		ArgumentCaptor<HttpDelete> captor = ArgumentCaptor.forClass(HttpDelete.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpDelete captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		verify(mockResponse).close();
 	}
 }
