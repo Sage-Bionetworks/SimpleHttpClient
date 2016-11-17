@@ -54,15 +54,18 @@ public interface SimpleHttpClient {
 	 * @param request
 	 * @param toUpload
 	 * @return
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
 	 */
-	SimpleHttpResponse putFile(SimpleHttpRequest request, File toUpload);
+	SimpleHttpResponse putFile(SimpleHttpRequest request, File toUpload) throws ClientProtocolException, IOException;
 
 	/**
 	 * Performs a file download
 	 * 
 	 * @param request
 	 * @param result
-	 * @return
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
 	 */
-	SimpleHttpResponse getFile(SimpleHttpRequest request, File result);
+	void getFile(SimpleHttpRequest request, File result) throws ClientProtocolException, IOException;
 }
