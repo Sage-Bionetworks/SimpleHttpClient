@@ -46,7 +46,9 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPost httpPost = new HttpPost(request.getUri());
-		httpPost.setEntity(new StringEntity(requestBody));
+		if (requestBody != null) {
+			httpPost.setEntity(new StringEntity(requestBody));
+		}
 		copyHeaders(request, httpPost);
 		return execute(httpPost);
 	}
@@ -56,7 +58,9 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPut httpPut = new HttpPut(request.getUri());
-		httpPut.setEntity(new StringEntity(requestBody));
+		if (requestBody != null) {
+			httpPut.setEntity(new StringEntity(requestBody));
+		}
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
 	}
@@ -87,6 +91,9 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 	public SimpleHttpResponse putFile(SimpleHttpRequest request, File toUpload)
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
+		if (toUpload == null) {
+			throw new IllegalArgumentException("toUpload cannot be null");
+		}
 		HttpPut httpPut = new HttpPut(request.getUri());
 		httpPut.setEntity(new FileEntity(toUpload));
 		copyHeaders(request, httpPut);
@@ -97,6 +104,9 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 	public void getFile(SimpleHttpRequest request, File result)
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
+		if (result == null) {
+			throw new IllegalArgumentException("result cannot be null");
+		}
 		HttpGet httpGet = new HttpGet(request.getUri());
 		copyHeaders(request, httpGet);
 		CloseableHttpResponse response = null;
