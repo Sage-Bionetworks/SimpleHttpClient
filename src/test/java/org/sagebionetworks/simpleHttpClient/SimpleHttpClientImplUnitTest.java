@@ -1,12 +1,21 @@
 package org.sagebionetworks.simpleHttpClient;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -24,7 +33,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
 
 public class SimpleHttpClientImplUnitTest {
 
@@ -32,16 +40,19 @@ public class SimpleHttpClientImplUnitTest {
 	private CloseableHttpClient mockHttpClient;
 	@Mock
 	private CloseableHttpResponse mockResponse;
+	@Mock
+	private StreamProvider mockProvider;
 
-	private SimpleHttpClient simpleHttpClient;
+	private SimpleHttpClientImpl simpleHttpClient;
 	private SimpleHttpRequest request;
 	private SimpleHttpResponse response;
 
 	@Before
 	public void before() throws Exception {
 		MockitoAnnotations.initMocks(this);
-		simpleHttpClient = new SimpleHttpClientImpl();
-		ReflectionTestUtils.setField(simpleHttpClient, "httpClient", mockHttpClient);
+		simpleHttpClient = new SimpleHttpClientImpl(null);
+		simpleHttpClient.setStreamProvider(mockProvider);
+		simpleHttpClient.setHttpClient(mockHttpClient);
 
 		Map<String, String> headers = new HashMap<String, String>();
 		headers.put("name", "value");
@@ -51,9 +62,11 @@ public class SimpleHttpClientImplUnitTest {
 		when(mockHttpClient.execute(any(HttpUriRequest.class))).thenReturn(mockResponse);
 		StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
+		when(mockStatusLine.getReasonPhrase()).thenReturn("reason");
 		when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
 		response = new SimpleHttpResponse();
 		response.setStatusCode(HttpStatus.SC_OK);
+		response.setStatusReason("reason");
 	}
 
 	@Test (expected = IllegalArgumentException.class)
@@ -171,7 +184,7 @@ public class SimpleHttpClientImplUnitTest {
 
 	@Test
 	public void testDelete() throws Exception {
-		simpleHttpClient.delete(request);
+		assertEquals(response, simpleHttpClient.delete(request));
 		ArgumentCaptor<HttpDelete> captor = ArgumentCaptor.forClass(HttpDelete.class);
 		verify(mockHttpClient).execute(captor.capture());
 		HttpDelete captured = captor.getValue();
@@ -204,14 +217,66 @@ public class SimpleHttpClientImplUnitTest {
 	}
 
 	@Test
-	public void testGetFile() throws Exception {
+	public void testGetFileWithException() throws Exception {
 		File mockFile = Mockito.mock(File.class);
-		simpleHttpClient.getFile(request, mockFile);
+		FileOutputStream mockStream = Mockito.mock(FileOutputStream.class);
+		when(mockProvider.getFileOutputStream(mockFile)).thenReturn(mockStream);
+		when(mockResponse.getEntity()).thenThrow(new RuntimeException());
+		try {
+			simpleHttpClient.getFile(request, mockFile);
+		} catch (RuntimeException e) {
+			// expected
+		}
 		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
 		verify(mockHttpClient).execute(captor.capture());
 		HttpGet captured = captor.getValue();
 		assertEquals(request.getUri(), captured.getURI().toString());
 		assertEquals("value", captured.getHeaders("name")[0].getValue());
+		verify(mockResponse).close();
+		verify(mockStream).close();
+	}
+
+	@Test
+	public void testGetFile() throws Exception {
+		File mockFile = Mockito.mock(File.class);
+		FileOutputStream mockStream = Mockito.mock(FileOutputStream.class);
+		when(mockProvider.getFileOutputStream(mockFile)).thenReturn(mockStream);
+		assertEquals(response, simpleHttpClient.getFile(request, mockFile));
+		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpGet captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertEquals("value", captured.getHeaders("name")[0].getValue());
+		verify(mockResponse).close();
+		verify(mockStream).close();
+	}
+
+	@Test (expected = IllegalArgumentException.class)
+	public void testExecuteWithNullRequest() throws Exception {
+		simpleHttpClient.execute(null);
+	}
+
+	@Test
+	public void testExecuteWithNullResponseBody() throws Exception {
+		assertEquals(response, simpleHttpClient.execute(new HttpGet("uri")));
+		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpGet captured = captor.getValue();
+		assertEquals("uri", captured.getURI().toString());
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testExecuteWithResponseBody() throws Exception {
+		HttpEntity mockHttpEntity = Mockito.mock(HttpEntity.class);
+		when(mockResponse.getEntity()).thenReturn(mockHttpEntity);
+		when(mockHttpEntity.getContent()).thenReturn(new ByteArrayInputStream("content".getBytes()));
+		response.setContent("content");
+		assertEquals(response, simpleHttpClient.execute(new HttpGet("uri")));
+		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpGet captured = captor.getValue();
+		assertEquals("uri", captured.getURI().toString());
 		verify(mockResponse).close();
 	}
 }
