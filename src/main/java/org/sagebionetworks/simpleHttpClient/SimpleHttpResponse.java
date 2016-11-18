@@ -3,7 +3,7 @@ package org.sagebionetworks.simpleHttpClient;
 /**
  * This object represents a simple HttpResponse.
  * 
- * A SimpleHttpResponse only keeps information about the status code and the content of the response.
+ * A SimpleHttpResponse only keeps information about the status code, status reason, and the content of the response.
  * 
  * This should only be used for responses whose content fits in memory.
  * 
@@ -13,6 +13,7 @@ package org.sagebionetworks.simpleHttpClient;
 public class SimpleHttpResponse {
 
 	int statusCode;
+	String statusReason;
 	String content;
 
 	public int getStatusCode() {
@@ -20,6 +21,12 @@ public class SimpleHttpResponse {
 	}
 	public void setStatusCode(int statusCode) {
 		this.statusCode = statusCode;
+	}
+	public String getStatusReason() {
+		return statusReason;
+	}
+	public void setStatusReason(String statusReason) {
+		this.statusReason = statusReason;
 	}
 	public String getContent() {
 		return content;
@@ -33,6 +40,7 @@ public class SimpleHttpResponse {
 		int result = 1;
 		result = prime * result + ((content == null) ? 0 : content.hashCode());
 		result = prime * result + statusCode;
+		result = prime * result + ((statusReason == null) ? 0 : statusReason.hashCode());
 		return result;
 	}
 	@Override
@@ -51,10 +59,16 @@ public class SimpleHttpResponse {
 			return false;
 		if (statusCode != other.statusCode)
 			return false;
+		if (statusReason == null) {
+			if (other.statusReason != null)
+				return false;
+		} else if (!statusReason.equals(other.statusReason))
+			return false;
 		return true;
 	}
 	@Override
 	public String toString() {
-		return "SimpleHttpResponse [statusCode=" + statusCode + ", content=" + content + "]";
+		return "SimpleHttpResponse [statusCode=" + statusCode + ", statusReason=" + statusReason + ", content="
+				+ content + "]";
 	}
 }
