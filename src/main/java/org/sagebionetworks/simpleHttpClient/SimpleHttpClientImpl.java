@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -24,28 +22,26 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
 
-public class SimpleHttpClientImpl implements SimpleHttpClient{
+public final class SimpleHttpClientImpl implements SimpleHttpClient{
 
 	private CloseableHttpClient httpClient;
+	private StreamProvider provider;
 
 	/**
-	 * Create a SimpleHttpClient with a new connection pool.
-	 */
-	public SimpleHttpClientImpl() {
-		httpClient = HttpClients.createDefault();
-	}
-
-	/**
-	 * Create a custom SimpleHttpClient with the given connectionTimeOut and socketTimeOut
+	 * Create a SimpleHttpClient with a new connection pool
 	 * 
-	 * @param connectionTimeOutMs
-	 * @param socketTimeOutMs
+	 * @param config
 	 */
-	public SimpleHttpClientImpl(int connectionTimeOutMs, int socketTimeOutMs) {
-		HttpClientBuilder builder = HttpClientBuilder.create();
-		builder.setConnectionTimeToLive(connectionTimeOutMs, TimeUnit.MILLISECONDS);
-		builder.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(socketTimeOutMs).build());
-		httpClient = builder.build();
+	public SimpleHttpClientImpl(SimpleHttpClientConfig config) {
+		if (config == null) {
+			httpClient = HttpClients.createDefault();
+		} else {
+			HttpClientBuilder builder = HttpClientBuilder.create();
+			builder.setConnectionTimeToLive(config.getConnectionTimeoutMs(), TimeUnit.MILLISECONDS);
+			builder.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(config.getSocketTimeoutMs()).build());
+			httpClient = builder.build();
+		}
+		provider = new StreamProviderImpl();
 	}
 
 	@Override
@@ -82,25 +78,12 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 	}
 
 	@Override
-	public void delete(SimpleHttpRequest request)
+	public SimpleHttpResponse delete(SimpleHttpRequest request)
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpDelete httpDelete = new HttpDelete(request.getUri());
 		copyHeaders(request, httpDelete);
-		CloseableHttpResponse response = null;
-		try {
-			response = httpClient.execute(httpDelete);
-			if (response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT
-					&& response.getStatusLine().getStatusCode() != HttpStatus.SC_OK
-					&& response.getStatusLine().getStatusCode() != HttpStatus.SC_ACCEPTED) {
-				throw new HttpResponseException(response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
-			}
-		} finally {
-			if (response != null) {
-				EntityUtils.consumeQuietly(response.getEntity());
-				response.close();
-			}
-		}
+		return execute(httpDelete);
 	}
 
 	@Override
@@ -117,7 +100,7 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 	}
 
 	@Override
-	public void getFile(SimpleHttpRequest request, File result)
+	public SimpleHttpResponse getFile(SimpleHttpRequest request, File result)
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		if (result == null) {
@@ -126,14 +109,20 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 		HttpGet httpGet = new HttpGet(request.getUri());
 		copyHeaders(request, httpGet);
 		CloseableHttpResponse response = null;
+		FileOutputStream fileOutputStream = provider.getFileOutputStream(result);
 		try {
 			response = httpClient.execute(httpGet);
 			if (response.getEntity() != null) {
-				FileOutputStream fileOutputStream = new FileOutputStream(result);
 				response.getEntity().writeTo(fileOutputStream);
+			}
+			SimpleHttpResponse simpleHttpResponse = new SimpleHttpResponse();
+			simpleHttpResponse.setStatusCode(response.getStatusLine().getStatusCode());
+			simpleHttpResponse.setStatusReason(response.getStatusLine().getReasonPhrase());
+			return simpleHttpResponse;
+		} finally {
+			if (fileOutputStream != null) {
 				fileOutputStream.close();
 			}
-		} finally {
 			if (response != null) {
 				response.close();
 			}
@@ -183,7 +172,7 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 	 * @throws IOException
 	 * @throws ClientProtocolException
 	 */
-	private SimpleHttpResponse execute(HttpUriRequest httpUriRequest)
+	protected SimpleHttpResponse execute(HttpUriRequest httpUriRequest)
 			throws IOException, ClientProtocolException {
 		if (httpUriRequest == null) {
 			throw new IllegalArgumentException("httpUriRequest cannot be null");
@@ -193,6 +182,7 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 			response = httpClient.execute(httpUriRequest);
 			SimpleHttpResponse simpleHttpResponse = new SimpleHttpResponse();
 			simpleHttpResponse.setStatusCode(response.getStatusLine().getStatusCode());
+			simpleHttpResponse.setStatusReason(response.getStatusLine().getReasonPhrase());
 			if (response.getEntity() != null) {
 				simpleHttpResponse.setContent(EntityUtils.toString(response.getEntity()));
 			}
@@ -202,5 +192,13 @@ public class SimpleHttpClientImpl implements SimpleHttpClient{
 				response.close();
 			}
 		}
+	}
+
+	protected void setHttpClient(CloseableHttpClient httpClient) {
+		this.httpClient = httpClient;
+	}
+
+	protected void setStreamProvider(StreamProvider provider) {
+		this.provider = provider;
 	}
 }
