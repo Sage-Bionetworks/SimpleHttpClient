@@ -46,7 +46,7 @@ public interface SimpleHttpClient {
 	 * @throws IOException 
 	 * @throws ClientProtocolException 
 	 */
-	void delete(SimpleHttpRequest request) throws ClientProtocolException, IOException;
+	SimpleHttpResponse delete(SimpleHttpRequest request) throws ClientProtocolException, IOException;
 
 	/**
 	 * Performs an file upload
@@ -67,5 +67,5 @@ public interface SimpleHttpClient {
 	 * @throws IOException 
 	 * @throws ClientProtocolException 
 	 */
-	void getFile(SimpleHttpRequest request, File result) throws ClientProtocolException, IOException;
+	SimpleHttpResponse getFile(SimpleHttpRequest request, File result) throws ClientProtocolException, IOException;
 }
