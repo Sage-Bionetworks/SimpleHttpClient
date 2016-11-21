@@ -4,20 +4,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.config.SocketConfig;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
@@ -36,10 +34,14 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		if (config == null) {
 			httpClient = HttpClients.createDefault();
 		} else {
-			HttpClientBuilder builder = HttpClientBuilder.create();
-			builder.setConnectionTimeToLive(config.getConnectionTimeoutMs(), TimeUnit.MILLISECONDS);
-			builder.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(config.getSocketTimeoutMs()).build());
-			httpClient = builder.build();
+			RequestConfig requestConfig = RequestConfig.custom()
+					.setConnectionRequestTimeout(config.getConnectionRequestTimeoutMs())
+					.setConnectTimeout(config.getConnectTimeoutMs())
+					.setSocketTimeout(config.getSocketTimeoutMs())
+					.build();
+			httpClient = HttpClients.custom()
+					.setDefaultRequestConfig(requestConfig)
+					.build();;
 		}
 		provider = new StreamProviderImpl();
 	}
