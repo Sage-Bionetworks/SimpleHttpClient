@@ -31,6 +31,7 @@ public class SimpleHttpClientConfig {
 	public SimpleHttpClientConfig() {
 		connectTimeoutMs = DEFAULT_CONNECT_TIMEOUT_MS;
 		socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
+		connectionRequestTimeoutMs = DEFAULT_CONNECTION_REQUEST_TIMEOUT_MS;
 	}
 
 	public int getConnectTimeoutMs() {
