@@ -50,7 +50,7 @@ public class SimpleHttpClientImplUnitTest {
 	@Before
 	public void before() throws Exception {
 		MockitoAnnotations.initMocks(this);
-		simpleHttpClient = new SimpleHttpClientImpl(null);
+		simpleHttpClient = new SimpleHttpClientImpl();
 		simpleHttpClient.setStreamProvider(mockProvider);
 		simpleHttpClient.setHttpClient(mockHttpClient);
 
