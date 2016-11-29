@@ -25,6 +25,10 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	private CloseableHttpClient httpClient;
 	private StreamProvider provider;
 
+	public SimpleHttpClientImpl() {
+		this(null);
+	}
+
 	/**
 	 * Create a SimpleHttpClient with a new connection pool
 	 * 
