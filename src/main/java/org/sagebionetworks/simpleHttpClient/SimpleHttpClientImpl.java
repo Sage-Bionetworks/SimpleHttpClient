@@ -124,6 +124,7 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			SimpleHttpResponse simpleHttpResponse = new SimpleHttpResponse();
 			simpleHttpResponse.setStatusCode(response.getStatusLine().getStatusCode());
 			simpleHttpResponse.setStatusReason(response.getStatusLine().getReasonPhrase());
+			simpleHttpResponse.setHeaders(response.getAllHeaders());
 			return simpleHttpResponse;
 		} finally {
 			if (fileOutputStream != null) {
@@ -189,6 +190,7 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			SimpleHttpResponse simpleHttpResponse = new SimpleHttpResponse();
 			simpleHttpResponse.setStatusCode(response.getStatusLine().getStatusCode());
 			simpleHttpResponse.setStatusReason(response.getStatusLine().getReasonPhrase());
+			simpleHttpResponse.setHeaders(response.getAllHeaders());
 			if (response.getEntity() != null) {
 				simpleHttpResponse.setContent(EntityUtils.toString(response.getEntity()));
 			}

@@ -12,8 +12,8 @@ import java.util.Map;
  */
 public class SimpleHttpRequest {
 
-	String uri;
-	Map<String, String> headers;
+	private String uri;
+	private Map<String, String> headers;
 
 	public String getUri() {
 		return uri;

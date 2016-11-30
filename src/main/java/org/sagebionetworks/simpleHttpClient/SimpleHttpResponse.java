@@ -1,5 +1,9 @@
 package org.sagebionetworks.simpleHttpClient;
 
+import java.util.Arrays;
+
+import org.apache.http.Header;
+
 /**
  * This object represents a simple HttpResponse.
  * 
@@ -12,9 +16,10 @@ package org.sagebionetworks.simpleHttpClient;
  */
 public class SimpleHttpResponse {
 
-	int statusCode;
-	String statusReason;
-	String content;
+	private int statusCode;
+	private String statusReason;
+	private String content;
+	private Header[] headers;
 
 	public int getStatusCode() {
 		return statusCode;
@@ -34,11 +39,18 @@ public class SimpleHttpResponse {
 	public void setContent(String content) {
 		this.content = content;
 	}
+	public Header[] getHeaders() {
+		return headers;
+	}
+	public void setHeaders(Header[] headers) {
+		this.headers = headers;
+	}
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((content == null) ? 0 : content.hashCode());
+		result = prime * result + Arrays.hashCode(headers);
 		result = prime * result + statusCode;
 		result = prime * result + ((statusReason == null) ? 0 : statusReason.hashCode());
 		return result;
@@ -57,6 +69,8 @@ public class SimpleHttpResponse {
 				return false;
 		} else if (!content.equals(other.content))
 			return false;
+		if (!Arrays.equals(headers, other.headers))
+			return false;
 		if (statusCode != other.statusCode)
 			return false;
 		if (statusReason == null) {
@@ -69,6 +83,6 @@ public class SimpleHttpResponse {
 	@Override
 	public String toString() {
 		return "SimpleHttpResponse [statusCode=" + statusCode + ", statusReason=" + statusReason + ", content="
-				+ content + "]";
+				+ content + ", headers=" + Arrays.toString(headers) + "]";
 	}
 }

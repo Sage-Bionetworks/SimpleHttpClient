@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
@@ -64,9 +65,12 @@ public class SimpleHttpClientImplUnitTest {
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getReasonPhrase()).thenReturn("reason");
 		when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
+		Header[] responseHeaders = new Header[0];
+		when(mockResponse.getAllHeaders()).thenReturn(responseHeaders);
 		response = new SimpleHttpResponse();
 		response.setStatusCode(HttpStatus.SC_OK);
 		response.setStatusReason("reason");
+		response.setHeaders(responseHeaders);
 	}
 
 	@Test (expected = IllegalArgumentException.class)
