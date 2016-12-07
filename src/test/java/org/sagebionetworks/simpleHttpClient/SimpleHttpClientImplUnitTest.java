@@ -13,6 +13,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.HttpEntity;
@@ -26,6 +28,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +49,7 @@ public class SimpleHttpClientImplUnitTest {
 	private SimpleHttpClientImpl simpleHttpClient;
 	private SimpleHttpRequest request;
 	private SimpleHttpResponse response;
+	private List<Header> responseHeaders;
 
 	@Before
 	public void before() throws Exception {
@@ -64,9 +68,9 @@ public class SimpleHttpClientImplUnitTest {
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getReasonPhrase()).thenReturn("reason");
 		when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
-		response = new SimpleHttpResponse();
-		response.setStatusCode(HttpStatus.SC_OK);
-		response.setStatusReason("reason");
+		responseHeaders = new LinkedList<Header>();
+		when(mockResponse.getAllHeaders()).thenReturn(new org.apache.http.Header[]{});
+		response = new SimpleHttpResponse(HttpStatus.SC_OK, "reason", null, responseHeaders);
 	}
 
 	@Test (expected = IllegalArgumentException.class)
@@ -271,12 +275,34 @@ public class SimpleHttpClientImplUnitTest {
 		HttpEntity mockHttpEntity = Mockito.mock(HttpEntity.class);
 		when(mockResponse.getEntity()).thenReturn(mockHttpEntity);
 		when(mockHttpEntity.getContent()).thenReturn(new ByteArrayInputStream("content".getBytes()));
-		response.setContent("content");
+		response = new SimpleHttpResponse(HttpStatus.SC_OK, "reason", "content", responseHeaders);
 		assertEquals(response, simpleHttpClient.execute(new HttpGet("uri")));
 		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
 		verify(mockHttpClient).execute(captor.capture());
 		HttpGet captured = captor.getValue();
 		assertEquals("uri", captured.getURI().toString());
 		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testConvertHeadersWithNull() {
+		assertNull(SimpleHttpClientImpl.convertHeaders(null));
+	}
+
+	@Test
+	public void testConvertHeadersWithEmptyArray() {
+		assertEquals(new LinkedList<Header>(),
+				SimpleHttpClientImpl.convertHeaders(new org.apache.http.Header[]{}));
+	}
+
+	@Test
+	public void testConvertHeaders() {
+		org.apache.http.Header header1 = new BasicHeader("name", "value");
+		org.apache.http.Header header2 = new BasicHeader("name2", "value2");
+		org.apache.http.Header[] toConvert = new org.apache.http.Header[]{header1, header2};
+		List<Header> converted = new LinkedList<Header>();
+		converted.add(new Header("name", "value"));
+		converted.add(new Header("name2", "value2"));
+		assertEquals(converted, SimpleHttpClientImpl.convertHeaders(toConvert));
 	}
 }

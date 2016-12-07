@@ -3,6 +3,8 @@ package org.sagebionetworks.simpleHttpClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.ClientProtocolException;
@@ -121,10 +123,11 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			if (response.getEntity() != null) {
 				response.getEntity().writeTo(fileOutputStream);
 			}
-			SimpleHttpResponse simpleHttpResponse = new SimpleHttpResponse();
-			simpleHttpResponse.setStatusCode(response.getStatusLine().getStatusCode());
-			simpleHttpResponse.setStatusReason(response.getStatusLine().getReasonPhrase());
-			return simpleHttpResponse;
+			return new SimpleHttpResponse(
+					response.getStatusLine().getStatusCode(),
+					response.getStatusLine().getReasonPhrase(),
+					null,
+					convertHeaders(response.getAllHeaders()));
 		} finally {
 			if (fileOutputStream != null) {
 				fileOutputStream.close();
@@ -171,6 +174,23 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	}
 
 	/**
+	 * Convert org.apache.http.Header[] to list of SimpleHttpResponse's Header
+	 * 
+	 * @param headers
+	 * @return
+	 */
+	public static List<Header> convertHeaders(org.apache.http.Header[] headers) {
+		if (headers == null) {
+			return null;
+		}
+		List<Header> results = new LinkedList<Header>();
+		for (int i = 0; i < headers.length; i++) {
+			results.add(new Header(headers[i].getName(), headers[i].getValue()));
+		}
+		return results;
+	}
+
+	/**
 	 * Performs the request, then consume the response to build a simpleHttpResponse
 	 * 
 	 * @param httpUriRequest
@@ -186,13 +206,15 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		CloseableHttpResponse response = null;
 		try {
 			response = httpClient.execute(httpUriRequest);
-			SimpleHttpResponse simpleHttpResponse = new SimpleHttpResponse();
-			simpleHttpResponse.setStatusCode(response.getStatusLine().getStatusCode());
-			simpleHttpResponse.setStatusReason(response.getStatusLine().getReasonPhrase());
+			String content = null;
 			if (response.getEntity() != null) {
-				simpleHttpResponse.setContent(EntityUtils.toString(response.getEntity()));
+				content = EntityUtils.toString(response.getEntity());
 			}
-			return simpleHttpResponse;
+			return new SimpleHttpResponse(
+					response.getStatusLine().getStatusCode(),
+					response.getStatusLine().getReasonPhrase(),
+					content,
+					convertHeaders(response.getAllHeaders()));
 		} finally {
 			if (response != null) {
 				response.close();
