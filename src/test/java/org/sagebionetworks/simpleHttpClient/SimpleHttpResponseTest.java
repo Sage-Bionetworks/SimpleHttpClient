@@ -27,6 +27,6 @@ public class SimpleHttpResponseTest {
 		headers.add(new Header("key", "second"));
 		headers.add(new Header("key", "third"));
 		SimpleHttpResponse response = new SimpleHttpResponse(200, "OK", null, headers);
-		assertEquals("first", response.getFirstHeader("key").getValue());
+		assertEquals("first", response.getFirstHeader("Key").getValue());
 	}
 }

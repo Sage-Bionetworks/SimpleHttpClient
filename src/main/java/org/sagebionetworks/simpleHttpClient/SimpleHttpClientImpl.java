@@ -179,7 +179,7 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	 * @param headers
 	 * @return
 	 */
-	public static List<Header> convertHeaders(org.apache.http.Header[] headers) {
+	protected static List<Header> convertHeaders(org.apache.http.Header[] headers) {
 		if (headers == null) {
 			return null;
 		}
