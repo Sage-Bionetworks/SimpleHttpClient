@@ -3,6 +3,7 @@ package org.sagebionetworks.simpleHttpClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -185,13 +186,15 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	 * @return
 	 */
 	protected static ContentType extractContentType(SimpleHttpRequest request) {
-		ContentType contentType = ContentType.APPLICATION_JSON;
-		if (request != null &&
-				request.getHeaders() != null &&
-				request.getHeaders().containsKey(CONTENT_TYPE)){
-			contentType = ContentType.parse(request.getHeaders().get(CONTENT_TYPE));
+		try {
+			ContentType contentType = ContentType.parse(request.getHeaders().get(CONTENT_TYPE));
+			if (contentType.getCharset() == null) {
+				contentType = contentType.withCharset(Charset.forName("UTF-8"));
+			}
+			return contentType;
+		} catch (Exception e) {
+			return ContentType.APPLICATION_JSON;
 		}
-		return contentType;
 	}
 
 	/**
