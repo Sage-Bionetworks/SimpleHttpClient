@@ -26,6 +26,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -304,5 +305,32 @@ public class SimpleHttpClientImplUnitTest {
 		converted.add(new Header("name", "value"));
 		converted.add(new Header("name2", "value2"));
 		assertEquals(converted, SimpleHttpClientImpl.convertHeaders(toConvert));
+	}
+
+	@Test
+	public void testExtractContentTypeWithNullRequest() {
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(null));
+	}
+
+	@Test
+	public void testExtractContentTypeWithNullHeader() {
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(new SimpleHttpRequest()));
+	}
+
+	@Test
+	public void testExtractContentTypeWithEmptyContentTypeHeader() {
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(request));
+	}
+
+	@Test
+	public void testExtractContentTypeWithExistingContentTypeHeader() {
+		request.getHeaders().put("Content-Type", ContentType.TEXT_PLAIN.toString());
+		assertEquals(ContentType.TEXT_PLAIN.getCharset(),
+				SimpleHttpClientImpl.extractContentType(request).getCharset());
+		assertEquals(ContentType.TEXT_PLAIN.getMimeType(),
+				SimpleHttpClientImpl.extractContentType(request).getMimeType());
 	}
 }

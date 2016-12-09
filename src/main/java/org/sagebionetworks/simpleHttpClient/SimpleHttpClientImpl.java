@@ -15,6 +15,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -24,6 +25,7 @@ import org.apache.http.util.EntityUtils;
 
 public final class SimpleHttpClientImpl implements SimpleHttpClient{
 
+	private static final String CONTENT_TYPE = "Content-Type";
 	private CloseableHttpClient httpClient;
 	private StreamProvider provider;
 
@@ -66,8 +68,9 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPost httpPost = new HttpPost(request.getUri());
+		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPost.setEntity(new StringEntity(requestBody));
+			httpPost.setEntity(new StringEntity(requestBody, contentType));
 		}
 		copyHeaders(request, httpPost);
 		return execute(httpPost);
@@ -78,8 +81,9 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPut httpPut = new HttpPut(request.getUri());
+		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPut.setEntity(new StringEntity(requestBody));
+			httpPut.setEntity(new StringEntity(requestBody, contentType));
 		}
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
@@ -171,6 +175,23 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 				httpUriRequest.addHeader(name, headers.get(name));
 			}
 		}
+	}
+
+	/**
+	 * Extract ContentType from the request headers. If there is none, use
+	 * ContentType.APPLICATION_JSON.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	protected static ContentType extractContentType(SimpleHttpRequest request) {
+		ContentType contentType = ContentType.APPLICATION_JSON;
+		if (request != null &&
+				request.getHeaders() != null &&
+				request.getHeaders().containsKey(CONTENT_TYPE)){
+			contentType = ContentType.parse(request.getHeaders().get(CONTENT_TYPE));
+		}
+		return contentType;
 	}
 
 	/**
