@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -307,9 +308,10 @@ public class SimpleHttpClientImplUnitTest {
 		assertEquals(converted, SimpleHttpClientImpl.convertHeaders(toConvert));
 	}
 
-	@Test (expected = IllegalArgumentException.class)
+	@Test
 	public void testExtractContentTypeWithNullRequest() {
-		SimpleHttpClientImpl.extractContentType(null);
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(null));
 	}
 
 	@Test
@@ -333,10 +335,13 @@ public class SimpleHttpClientImplUnitTest {
 				SimpleHttpClientImpl.extractContentType(request).getMimeType());
 	}
 
-	@Test (expected = IllegalArgumentException.class)
+	@Test
 	public void testExtractContentTypeWithContentTypeHeaderWithoutCharset() {
 		request.getHeaders().put("Content-Type", "text/plain");
-		SimpleHttpClientImpl.extractContentType(request);
+		assertEquals(Charset.forName("UTF-8"),
+				SimpleHttpClientImpl.extractContentType(request).getCharset());
+		assertEquals("text/plain",
+				SimpleHttpClientImpl.extractContentType(request).getMimeType());
 	}
 
 	@Test
