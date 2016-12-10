@@ -3,11 +3,11 @@ package org.sagebionetworks.simpleHttpClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -69,9 +69,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPost httpPost = new HttpPost(request.getUri());
-		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPost.setEntity(new StringEntity(requestBody, contentType));
+			httpPost.setEntity(new StringEntity(requestBody, extractContentType(request)));
 		}
 		copyHeaders(request, httpPost);
 		return execute(httpPost);
@@ -82,9 +81,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPut httpPut = new HttpPut(request.getUri());
-		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPut.setEntity(new StringEntity(requestBody, contentType));
+			httpPut.setEntity(new StringEntity(requestBody, extractContentType(request)));
 		}
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
@@ -186,13 +184,20 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	 * @return
 	 */
 	protected static ContentType extractContentType(SimpleHttpRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("SimpleHttpRequest is required.");
+		}
+		if (request.getHeaders() == null ||
+				!request.getHeaders().containsKey(CONTENT_TYPE)) {
+			return ContentType.APPLICATION_JSON;
+		}
 		try {
 			ContentType contentType = ContentType.parse(request.getHeaders().get(CONTENT_TYPE));
 			if (contentType.getCharset() == null) {
-				contentType = contentType.withCharset(Charset.forName("UTF-8"));
+				throw new IllegalArgumentException("Charset is required.");
 			}
 			return contentType;
-		} catch (Exception e) {
+		} catch (ParseException e) {
 			return ContentType.APPLICATION_JSON;
 		}
 	}
