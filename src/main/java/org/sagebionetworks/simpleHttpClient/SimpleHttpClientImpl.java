@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -186,13 +187,21 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	 * @return
 	 */
 	protected static ContentType extractContentType(SimpleHttpRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("SimpleHttpRequest is required.");
+		}
 		try {
 			ContentType contentType = ContentType.parse(request.getHeaders().get(CONTENT_TYPE));
 			if (contentType.getCharset() == null) {
 				contentType = contentType.withCharset(Charset.forName("UTF-8"));
 			}
+			request.getHeaders().put(CONTENT_TYPE, contentType.toString());
 			return contentType;
 		} catch (Exception e) {
+			if (request.getHeaders() == null) {
+				request.setHeaders(new HashMap<String, String>());
+			}
+			request.getHeaders().put(CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
 			return ContentType.APPLICATION_JSON;
 		}
 	}

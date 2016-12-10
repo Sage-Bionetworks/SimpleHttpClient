@@ -308,22 +308,26 @@ public class SimpleHttpClientImplUnitTest {
 		assertEquals(converted, SimpleHttpClientImpl.convertHeaders(toConvert));
 	}
 
-	@Test
+	@Test (expected = IllegalArgumentException.class)
 	public void testExtractContentTypeWithNullRequest() {
-		assertEquals(ContentType.APPLICATION_JSON,
-				SimpleHttpClientImpl.extractContentType(null));
+		SimpleHttpClientImpl.extractContentType(null);
 	}
 
 	@Test
 	public void testExtractContentTypeWithNullHeader() {
+		request = new SimpleHttpRequest();
 		assertEquals(ContentType.APPLICATION_JSON,
-				SimpleHttpClientImpl.extractContentType(new SimpleHttpRequest()));
+				SimpleHttpClientImpl.extractContentType(request));
+		assertEquals(ContentType.APPLICATION_JSON.toString(),
+				request.getHeaders().get("Content-Type"));
 	}
 
 	@Test
 	public void testExtractContentTypeWithEmptyContentTypeHeader() {
 		assertEquals(ContentType.APPLICATION_JSON,
 				SimpleHttpClientImpl.extractContentType(request));
+		assertEquals(ContentType.APPLICATION_JSON.toString(),
+				request.getHeaders().get("Content-Type"));
 	}
 
 	@Test
@@ -333,6 +337,8 @@ public class SimpleHttpClientImplUnitTest {
 				SimpleHttpClientImpl.extractContentType(request).getCharset());
 		assertEquals(ContentType.TEXT_PLAIN.getMimeType(),
 				SimpleHttpClientImpl.extractContentType(request).getMimeType());
+		assertEquals(ContentType.TEXT_PLAIN.toString(),
+				request.getHeaders().get("Content-Type"));
 	}
 
 	@Test
@@ -342,6 +348,8 @@ public class SimpleHttpClientImplUnitTest {
 				SimpleHttpClientImpl.extractContentType(request).getCharset());
 		assertEquals("text/plain",
 				SimpleHttpClientImpl.extractContentType(request).getMimeType());
+		assertEquals("text/plain; charset=UTF-8",
+				request.getHeaders().get("Content-Type"));
 	}
 
 	@Test
@@ -349,5 +357,7 @@ public class SimpleHttpClientImplUnitTest {
 		request.getHeaders().put("Content-Type", "");
 		assertEquals(ContentType.APPLICATION_JSON,
 				SimpleHttpClientImpl.extractContentType(request));
+		assertEquals(ContentType.APPLICATION_JSON.toString(),
+				request.getHeaders().get("Content-Type"));
 	}
 }
