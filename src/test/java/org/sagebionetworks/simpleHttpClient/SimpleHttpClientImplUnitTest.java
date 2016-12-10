@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -304,5 +306,58 @@ public class SimpleHttpClientImplUnitTest {
 		converted.add(new Header("name", "value"));
 		converted.add(new Header("name2", "value2"));
 		assertEquals(converted, SimpleHttpClientImpl.convertHeaders(toConvert));
+	}
+
+	@Test (expected = IllegalArgumentException.class)
+	public void testExtractContentTypeWithNullRequest() {
+		SimpleHttpClientImpl.extractContentType(null);
+	}
+
+	@Test
+	public void testExtractContentTypeWithNullHeader() {
+		request = new SimpleHttpRequest();
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(request));
+		assertEquals(ContentType.APPLICATION_JSON.toString(),
+				request.getHeaders().get("Content-Type"));
+	}
+
+	@Test
+	public void testExtractContentTypeWithEmptyContentTypeHeader() {
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(request));
+		assertEquals(ContentType.APPLICATION_JSON.toString(),
+				request.getHeaders().get("Content-Type"));
+	}
+
+	@Test
+	public void testExtractContentTypeWithExistingContentTypeHeader() {
+		request.getHeaders().put("Content-Type", ContentType.TEXT_PLAIN.toString());
+		assertEquals(ContentType.TEXT_PLAIN.getCharset(),
+				SimpleHttpClientImpl.extractContentType(request).getCharset());
+		assertEquals(ContentType.TEXT_PLAIN.getMimeType(),
+				SimpleHttpClientImpl.extractContentType(request).getMimeType());
+		assertEquals(ContentType.TEXT_PLAIN.toString(),
+				request.getHeaders().get("Content-Type"));
+	}
+
+	@Test
+	public void testExtractContentTypeWithContentTypeHeaderWithoutCharset() {
+		request.getHeaders().put("Content-Type", "text/plain");
+		assertEquals(Charset.forName("UTF-8"),
+				SimpleHttpClientImpl.extractContentType(request).getCharset());
+		assertEquals("text/plain",
+				SimpleHttpClientImpl.extractContentType(request).getMimeType());
+		assertEquals("text/plain; charset=UTF-8",
+				request.getHeaders().get("Content-Type"));
+	}
+
+	@Test
+	public void testExtractContentTypeWithInvalidContentTypeHeader() {
+		request.getHeaders().put("Content-Type", "");
+		assertEquals(ContentType.APPLICATION_JSON,
+				SimpleHttpClientImpl.extractContentType(request));
+		assertEquals(ContentType.APPLICATION_JSON.toString(),
+				request.getHeaders().get("Content-Type"));
 	}
 }

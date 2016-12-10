@@ -4,7 +4,7 @@
 
 	<groupId>org.sagebionetworks</groupId>
 	<artifactId>simple-http-client</artifactId>
-	<version>0.0.4</version>
+	<version>0.0.6</version>
 	<name>simple-http-client</name>
 
 	<dependencies>

@@ -3,6 +3,8 @@ package org.sagebionetworks.simpleHttpClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +17,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -24,6 +27,7 @@ import org.apache.http.util.EntityUtils;
 
 public final class SimpleHttpClientImpl implements SimpleHttpClient{
 
+	private static final String CONTENT_TYPE = "Content-Type";
 	private CloseableHttpClient httpClient;
 	private StreamProvider provider;
 
@@ -66,8 +70,9 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPost httpPost = new HttpPost(request.getUri());
+		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPost.setEntity(new StringEntity(requestBody));
+			httpPost.setEntity(new StringEntity(requestBody, contentType));
 		}
 		copyHeaders(request, httpPost);
 		return execute(httpPost);
@@ -78,8 +83,9 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPut httpPut = new HttpPut(request.getUri());
+		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPut.setEntity(new StringEntity(requestBody));
+			httpPut.setEntity(new StringEntity(requestBody, contentType));
 		}
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
@@ -174,12 +180,39 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	}
 
 	/**
+	 * Extract ContentType from the request headers. If there is none, use
+	 * ContentType.APPLICATION_JSON.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	protected static ContentType extractContentType(SimpleHttpRequest request) {
+		if (request == null) {
+			throw new IllegalArgumentException("SimpleHttpRequest is required.");
+		}
+		try {
+			ContentType contentType = ContentType.parse(request.getHeaders().get(CONTENT_TYPE));
+			if (contentType.getCharset() == null) {
+				contentType = contentType.withCharset(Charset.forName("UTF-8"));
+			}
+			request.getHeaders().put(CONTENT_TYPE, contentType.toString());
+			return contentType;
+		} catch (Exception e) {
+			if (request.getHeaders() == null) {
+				request.setHeaders(new HashMap<String, String>());
+			}
+			request.getHeaders().put(CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
+			return ContentType.APPLICATION_JSON;
+		}
+	}
+
+	/**
 	 * Convert org.apache.http.Header[] to list of SimpleHttpResponse's Header
 	 * 
 	 * @param headers
 	 * @return
 	 */
-	public static List<Header> convertHeaders(org.apache.http.Header[] headers) {
+	protected static List<Header> convertHeaders(org.apache.http.Header[] headers) {
 		if (headers == null) {
 			return null;
 		}
