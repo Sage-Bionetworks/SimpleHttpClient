@@ -2,6 +2,7 @@ package org.sagebionetworks.simpleHttpClient;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.http.client.ClientProtocolException;
 
@@ -68,4 +69,15 @@ public interface SimpleHttpClient {
 	 * @throws ClientProtocolException 
 	 */
 	SimpleHttpResponse getFile(SimpleHttpRequest request, File result) throws ClientProtocolException, IOException;
+
+	/**
+	 * Performs an file upload from an inputStream
+	 * 
+	 * @param request
+	 * @param toUpload
+	 * @return
+	 * @throws ClientProtocolException
+	 * @throws IOException
+	 */
+	SimpleHttpResponse putToURL(SimpleHttpRequest request, InputStream toUpload, long inputLength) throws ClientProtocolException, IOException;
 }
