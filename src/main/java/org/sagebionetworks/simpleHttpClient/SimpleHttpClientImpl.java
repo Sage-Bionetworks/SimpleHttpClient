@@ -70,9 +70,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPost httpPost = new HttpPost(request.getUri());
-		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPost.setEntity(new StringEntity(requestBody, contentType));
+			httpPost.setEntity(new StringEntity(requestBody, extractContentType(request)));
 		}
 		copyHeaders(request, httpPost);
 		return execute(httpPost);
@@ -83,9 +82,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPut httpPut = new HttpPut(request.getUri());
-		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPut.setEntity(new StringEntity(requestBody, contentType));
+			httpPut.setEntity(new StringEntity(requestBody, extractContentType(request)));
 		}
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
