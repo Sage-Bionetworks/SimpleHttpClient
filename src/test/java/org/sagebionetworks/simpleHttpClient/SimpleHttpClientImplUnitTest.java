@@ -1,8 +1,6 @@
 package org.sagebionetworks.simpleHttpClient;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -12,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -29,6 +28,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
@@ -213,6 +213,27 @@ public class SimpleHttpClientImplUnitTest {
 		HttpPut captured = captor.getValue();
 		assertEquals(request.getUri(), captured.getURI().toString());
 		assertTrue(captured.getEntity() instanceof FileEntity);
+		assertEquals("value", captured.getHeaders("name")[0].getValue());
+		verify(mockResponse).close();
+	}
+
+
+	@Test (expected = IllegalArgumentException.class)
+	public void testPutToURLWithNullInputStream() throws Exception {
+		simpleHttpClient.putToURL(request, null, 0L);
+	}
+
+	@Test
+	public void testPutToURL() throws Exception {
+		InputStream mockFile = Mockito.mock(InputStream.class);
+		assertEquals(response, simpleHttpClient.putToURL(request, mockFile, 0L));
+		ArgumentCaptor<HttpPut> captor = ArgumentCaptor.forClass(HttpPut.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpPut captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertTrue(captured.getEntity() instanceof InputStreamEntity);
+		assertFalse(captured.getEntity().isChunked());
+		assertEquals(captured.getEntity().getContentLength(), 0L);
 		assertEquals("value", captured.getHeaders("name")[0].getValue());
 		verify(mockResponse).close();
 	}

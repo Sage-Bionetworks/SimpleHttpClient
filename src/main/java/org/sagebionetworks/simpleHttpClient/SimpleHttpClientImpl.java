@@ -3,6 +3,7 @@ package org.sagebionetworks.simpleHttpClient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +20,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -70,9 +72,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPost httpPost = new HttpPost(request.getUri());
-		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPost.setEntity(new StringEntity(requestBody, contentType));
+			httpPost.setEntity(new StringEntity(requestBody, extractContentType(request)));
 		}
 		copyHeaders(request, httpPost);
 		return execute(httpPost);
@@ -83,9 +84,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 			throws ClientProtocolException, IOException {
 		validateSimpleHttpRequest(request);
 		HttpPut httpPut = new HttpPut(request.getUri());
-		ContentType contentType = extractContentType(request);
 		if (requestBody != null) {
-			httpPut.setEntity(new StringEntity(requestBody, contentType));
+			httpPut.setEntity(new StringEntity(requestBody, extractContentType(request)));
 		}
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
@@ -109,6 +109,21 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		}
 		HttpPut httpPut = new HttpPut(request.getUri());
 		httpPut.setEntity(new FileEntity(toUpload));
+		copyHeaders(request, httpPut);
+		return execute(httpPut);
+	}
+
+	@Override
+	public SimpleHttpResponse putToURL(SimpleHttpRequest request, InputStream toUpload, long inputLength)
+			throws ClientProtocolException, IOException {
+		validateSimpleHttpRequest(request);
+		if (toUpload == null) {
+			throw new IllegalArgumentException("toUpload cannot be null");
+		}
+		HttpPut httpPut = new HttpPut(request.getUri());
+		InputStreamEntity entity = new InputStreamEntity(toUpload, inputLength);
+		entity.setChunked(false);
+		httpPut.setEntity(entity);
 		copyHeaders(request, httpPut);
 		return execute(httpPut);
 	}
