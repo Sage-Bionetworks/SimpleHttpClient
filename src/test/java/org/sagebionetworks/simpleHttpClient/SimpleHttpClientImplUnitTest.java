@@ -47,6 +47,8 @@ public class SimpleHttpClientImplUnitTest {
 	private CloseableHttpResponse mockResponse;
 	@Mock
 	private StreamProvider mockProvider;
+	@Mock
+	private StatusLine mockStatusLine;
 
 	private SimpleHttpClientImpl simpleHttpClient;
 	private SimpleHttpRequest request;
@@ -66,7 +68,6 @@ public class SimpleHttpClientImplUnitTest {
 		request.setUri("uri");
 		request.setHeaders(headers);
 		when(mockHttpClient.execute(any(HttpUriRequest.class))).thenReturn(mockResponse);
-		StatusLine mockStatusLine = Mockito.mock(StatusLine.class);
 		when(mockResponse.getStatusLine()).thenReturn(mockStatusLine);
 		when(mockStatusLine.getReasonPhrase()).thenReturn("reason");
 		when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_OK);
@@ -241,6 +242,26 @@ public class SimpleHttpClientImplUnitTest {
 	@Test (expected = IllegalArgumentException.class)
 	public void testDownloadFileWithNullFile() throws Exception {
 		simpleHttpClient.getFile(request, null);
+	}
+
+	/*
+	 * PLFM-4349
+	 */
+	@Test
+	public void testGetFileFailedWithReasonInJson() throws Exception {
+		File mockFile = Mockito.mock(File.class);
+		FileOutputStream mockStream = Mockito.mock(FileOutputStream.class);
+		when(mockProvider.getFileOutputStream(mockFile)).thenReturn(mockStream);
+		when(mockStatusLine.getStatusCode()).thenReturn(HttpStatus.SC_FORBIDDEN);
+		response = new SimpleHttpResponse(HttpStatus.SC_FORBIDDEN, "reason", null, responseHeaders);
+		assertEquals(response, simpleHttpClient.getFile(request, mockFile));
+		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpGet captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertEquals("value", captured.getHeaders("name")[0].getValue());
+		verify(mockResponse).close();
+		verify(mockStream).close();
 	}
 
 	@Test

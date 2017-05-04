@@ -141,13 +141,18 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		FileOutputStream fileOutputStream = provider.getFileOutputStream(result);
 		try {
 			response = httpClient.execute(httpGet);
+			String content = null;
 			if (response.getEntity() != null) {
-				response.getEntity().writeTo(fileOutputStream);
+				if (response.getStatusLine().getStatusCode() == 200) {
+					response.getEntity().writeTo(fileOutputStream);
+				} else {
+					content = EntityUtils.toString(response.getEntity());
+				}
 			}
 			return new SimpleHttpResponse(
 					response.getStatusLine().getStatusCode(),
 					response.getStatusLine().getReasonPhrase(),
-					null,
+					content,
 					convertHeaders(response.getAllHeaders()));
 		} finally {
 			if (fileOutputStream != null) {
