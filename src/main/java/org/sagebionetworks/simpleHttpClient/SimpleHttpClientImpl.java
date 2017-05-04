@@ -141,24 +141,18 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		FileOutputStream fileOutputStream = provider.getFileOutputStream(result);
 		try {
 			response = httpClient.execute(httpGet);
-			if (response.getStatusLine().getStatusCode() >= 300
-					&& response.getEntity() != null) {
-				// if fails but has reason in entity
-				return new SimpleHttpResponse(
-						response.getStatusLine().getStatusCode(),
-						response.getStatusLine().getReasonPhrase(),
-						EntityUtils.toString(response.getEntity()),
-						convertHeaders(response.getAllHeaders()));
-			}
-			if (response.getStatusLine().getStatusCode() < 300
-					&& response.getEntity() != null) {
-				// if success and has content
-				response.getEntity().writeTo(fileOutputStream);
+			String content = null;
+			if (response.getEntity() != null) {
+				if (response.getStatusLine().getStatusCode() == 200) {
+					response.getEntity().writeTo(fileOutputStream);
+				} else {
+					content = EntityUtils.toString(response.getEntity());
+				}
 			}
 			return new SimpleHttpResponse(
 					response.getStatusLine().getStatusCode(),
 					response.getStatusLine().getReasonPhrase(),
-					null,
+					content,
 					convertHeaders(response.getAllHeaders()));
 		} finally {
 			if (fileOutputStream != null) {
