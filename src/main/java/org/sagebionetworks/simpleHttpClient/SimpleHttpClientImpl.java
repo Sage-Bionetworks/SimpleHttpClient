@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -18,10 +19,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -32,6 +35,7 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	private static final String CONTENT_TYPE = "Content-Type";
 	private CloseableHttpClient httpClient;
 	private StreamProvider provider;
+	private CookieStore cookieStore;
 
 	public SimpleHttpClientImpl() {
 		this(null);
@@ -53,7 +57,8 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 					.build();
 			httpClient = HttpClients.custom()
 					.setDefaultRequestConfig(requestConfig)
-					.build();;
+					.setDefaultCookieStore(cookieStore)
+					.build();
 		}
 		provider = new StreamProviderImpl();
 	}
@@ -281,5 +286,22 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 
 	protected void setStreamProvider(StreamProvider provider) {
 		this.provider = provider;
+	}
+
+	protected String getCookieValue(String name){
+		if(name == null){
+			throw new IllegalArgumentException("name can not be null");
+		}
+
+		List<Cookie> cookies = cookieStore.getCookies();
+		if (cookies == null){
+			return null;
+		}
+		for(Cookie cookie : cookies){
+			if (name.equals(cookie.getName())){
+				return cookie.getValue();
+			}
+		}
+		return null;
 	}
 }
