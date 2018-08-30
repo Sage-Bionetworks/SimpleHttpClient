@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,13 +21,17 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieIdentityComparator;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.impl.cookie.BasicClientCookie2;
 import org.apache.http.util.EntityUtils;
 
 
@@ -35,7 +40,7 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	private static final String CONTENT_TYPE = "Content-Type";
 	private CloseableHttpClient httpClient;
 	private StreamProvider provider;
-	private CookieStore cookieStore;
+	CookieStore cookieStore;
 
 	public SimpleHttpClientImpl() {
 		this(null);
@@ -47,17 +52,19 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 	 * @param config
 	 */
 	public SimpleHttpClientImpl(SimpleHttpClientConfig config) {
+		this.cookieStore = new BasicCookieStore();
+		HttpClientBuilder builder = HttpClients.custom()
+									.setDefaultCookieStore(cookieStore);
 		if (config == null) {
-			httpClient = HttpClients.createDefault();
+			httpClient = builder.build();
 		} else {
 			RequestConfig requestConfig = RequestConfig.custom()
 					.setConnectionRequestTimeout(config.getConnectionRequestTimeoutMs())
 					.setConnectTimeout(config.getConnectTimeoutMs())
 					.setSocketTimeout(config.getSocketTimeoutMs())
 					.build();
-			httpClient = HttpClients.custom()
+			httpClient = builder
 					.setDefaultRequestConfig(requestConfig)
-					.setDefaultCookieStore(cookieStore)
 					.build();
 		}
 		provider = new StreamProviderImpl();
@@ -280,28 +287,46 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		}
 	}
 
-	protected void setHttpClient(CloseableHttpClient httpClient) {
-		this.httpClient = httpClient;
-	}
-
-	protected void setStreamProvider(StreamProvider provider) {
-		this.provider = provider;
-	}
-
-	protected String getCookieValue(String name){
+	@Override
+	public String getFirstCookieValue(String domain, String name){
 		if(name == null){
 			throw new IllegalArgumentException("name can not be null");
 		}
+		if(domain == null){
+			throw new IllegalArgumentException("domain can not be null");
+		}
 
-		List<Cookie> cookies = cookieStore.getCookies();
+		List<Cookie> cookies = cookieStore.getCookies() ;
 		if (cookies == null){
 			return null;
 		}
-		for(Cookie cookie : cookies){
-			if (name.equals(cookie.getName())){
+
+		for (Cookie cookie : cookies){
+			if (name.equals(cookie.getName()) && domain.equalsIgnoreCase(cookie.getDomain())){
 				return cookie.getValue();
 			}
 		}
+
 		return null;
+	}
+
+	@Override
+	public void addCookie(String domain, String name, String value){
+		if(name == null){
+			throw new IllegalArgumentException("name can not be null");
+		}
+		if(domain == null){
+			throw new IllegalArgumentException("domain can not be null");
+		}
+
+		BasicClientCookie cookie = new BasicClientCookie(name, value);
+		cookie.setDomain(domain);
+
+		cookieStore.addCookie(cookie);
+	}
+
+	@Override
+	public void clearAllCookies(){
+		cookieStore.clear();
 	}
 }

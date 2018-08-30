@@ -20,6 +20,7 @@ import java.util.Map;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -34,11 +35,15 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SimpleHttpClientImplUnitTest {
 
 	@Mock
@@ -49,8 +54,12 @@ public class SimpleHttpClientImplUnitTest {
 	private StreamProvider mockProvider;
 	@Mock
 	private StatusLine mockStatusLine;
+	@Mock
+	private CookieStore mockCookieStore;
 
-	private SimpleHttpClientImpl simpleHttpClient;
+	@InjectMocks
+	private SimpleHttpClientImpl simpleHttpClient = new SimpleHttpClientImpl();
+
 	private SimpleHttpRequest request;
 	private SimpleHttpResponse response;
 	private List<Header> responseHeaders;
@@ -58,9 +67,6 @@ public class SimpleHttpClientImplUnitTest {
 	@Before
 	public void before() throws Exception {
 		MockitoAnnotations.initMocks(this);
-		simpleHttpClient = new SimpleHttpClientImpl();
-		simpleHttpClient.setStreamProvider(mockProvider);
-		simpleHttpClient.setHttpClient(mockHttpClient);
 
 		Map<String, String> headers = new HashMap<String, String>();
 		headers.put("name", "value");
@@ -402,4 +408,6 @@ public class SimpleHttpClientImplUnitTest {
 		assertEquals(ContentType.APPLICATION_JSON.toString(),
 				request.getHeaders().get("Content-Type"));
 	}
+
+	//TODO: Tests
 }

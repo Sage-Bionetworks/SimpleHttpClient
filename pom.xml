@@ -4,14 +4,14 @@
 
 	<groupId>org.sagebionetworks</groupId>
 	<artifactId>simple-http-client</artifactId>
-	<version>0.0.8</version>
+	<version>0.0.9</version>
 	<name>simple-http-client</name>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
-			<version>4.5.2</version>
+			<version>4.5.6</version>
 		</dependency>
 		<!-- Testing -->
 		<dependency>
