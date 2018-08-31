@@ -146,10 +146,9 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		}
 		HttpGet httpGet = new HttpGet(request.getUri());
 		copyHeaders(request, httpGet);
-		CloseableHttpResponse response = null;
-		FileOutputStream fileOutputStream = provider.getFileOutputStream(result);
-		try {
-			response = httpClient.execute(httpGet);
+
+		try (FileOutputStream fileOutputStream = provider.getFileOutputStream(result);
+			 CloseableHttpResponse response = httpClient.execute(httpGet);){
 			String content = null;
 			if (response.getEntity() != null) {
 				if (response.getStatusLine().getStatusCode() == 200) {
@@ -163,13 +162,6 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 					response.getStatusLine().getReasonPhrase(),
 					content,
 					convertHeaders(response.getAllHeaders()));
-		} finally {
-			if (fileOutputStream != null) {
-				fileOutputStream.close();
-			}
-			if (response != null) {
-				response.close();
-			}
 		}
 	}
 
@@ -265,9 +257,7 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		if (httpUriRequest == null) {
 			throw new IllegalArgumentException("httpUriRequest cannot be null");
 		}
-		CloseableHttpResponse response = null;
-		try {
-			response = httpClient.execute(httpUriRequest);
+		try (CloseableHttpResponse response = httpClient.execute(httpUriRequest)){
 			String content = null;
 			if (response.getEntity() != null) {
 				content = EntityUtils.toString(response.getEntity());
@@ -277,10 +267,6 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 					response.getStatusLine().getReasonPhrase(),
 					content,
 					convertHeaders(response.getAllHeaders()));
-		} finally {
-			if (response != null) {
-				response.close();
-			}
 		}
 	}
 
