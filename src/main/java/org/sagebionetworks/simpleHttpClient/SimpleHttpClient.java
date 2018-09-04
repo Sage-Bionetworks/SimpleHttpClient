@@ -80,4 +80,25 @@ public interface SimpleHttpClient {
 	 * @throws IOException
 	 */
 	SimpleHttpResponse putToURL(SimpleHttpRequest request, InputStream toUpload, long inputLength) throws ClientProtocolException, IOException;
+
+	/**
+	 * Gets the first cookie belonging to the domain with specified name. This ignores the path.
+	 * @param domain
+	 * @param name
+	 * @return
+	 */
+	String getFirstCookieValue(String domain, String name);
+
+	/**
+	 * Adds a cookie to the domain's root path (e.g. "somedomain.com/", NOT "somedomain.com/some/path") with the specified name and value.
+	 * @param domain
+	 * @param name
+	 * @param value
+	 */
+	void addCookie(String domain, String name, String value);
+
+	/**
+	 * Clears all cookies that are currently stored
+	 */
+	void clearAllCookies();
 }
