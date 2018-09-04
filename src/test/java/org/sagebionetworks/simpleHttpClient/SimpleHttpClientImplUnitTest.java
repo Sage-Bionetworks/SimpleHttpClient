@@ -13,7 +13,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,7 +43,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -72,9 +70,9 @@ public class SimpleHttpClientImplUnitTest {
 	private final String cookieName = "cookieName";
 	private final String cookieValue = "cookieValue";
 
-	BasicClientCookie nonMatchingNameCookie;
-	BasicClientCookie nonMatchingDomainCookie;
-	BasicClientCookie matchingCookie;
+	BasicClientCookie matchingDomainNonMatchingNameCookie;
+	BasicClientCookie nonMatchingDomainMatchingNameCookie;
+	BasicClientCookie matchingDomainAndNameCookie;
 
 	@Before
 	public void before() throws Exception {
@@ -91,12 +89,12 @@ public class SimpleHttpClientImplUnitTest {
 		when(mockResponse.getAllHeaders()).thenReturn(new org.apache.http.Header[]{});
 		response = new SimpleHttpResponse(HttpStatus.SC_OK, "reason", null, responseHeaders);
 
-		nonMatchingNameCookie = new BasicClientCookie("nonMatchingDomainCookieName","nonMatchingNameCookieValue");
-		nonMatchingNameCookie.setDomain(cookieDomain);
-		nonMatchingDomainCookie = new BasicClientCookie(cookieName, "nonMatchingDomainCookieValue");
-		nonMatchingDomainCookie.setDomain("other.domain.com");
-		matchingCookie = new BasicClientCookie(cookieName, cookieValue);
-		matchingCookie.setDomain(cookieDomain);
+		matchingDomainNonMatchingNameCookie = new BasicClientCookie("nonMatchingDomainCookieName","nonMatchingNameCookieValue");
+		matchingDomainNonMatchingNameCookie.setDomain(cookieDomain);
+		nonMatchingDomainMatchingNameCookie = new BasicClientCookie(cookieName, "nonMatchingDomainCookieValue");
+		nonMatchingDomainMatchingNameCookie.setDomain("other.domain.com");
+		matchingDomainAndNameCookie = new BasicClientCookie(cookieName, cookieValue);
+		matchingDomainAndNameCookie.setDomain(cookieDomain);
 	}
 
 	@Test (expected = IllegalArgumentException.class)
@@ -451,7 +449,7 @@ public class SimpleHttpClientImplUnitTest {
 
 	@Test
 	public void testGetFirstCookieValue_noMatches(){
-		when(mockCookieStore.getCookies()).thenReturn(Arrays.asList(nonMatchingNameCookie, nonMatchingDomainCookie));
+		when(mockCookieStore.getCookies()).thenReturn(Arrays.asList(matchingDomainNonMatchingNameCookie, nonMatchingDomainMatchingNameCookie));
 
 		//method under test
 		String result = simpleHttpClient.getFirstCookieValue(cookieDomain, cookieName);
@@ -465,7 +463,7 @@ public class SimpleHttpClientImplUnitTest {
 
 	@Test
 	public void testGetFirstCookieValue_foundMatch(){
-		when(mockCookieStore.getCookies()).thenReturn(Arrays.asList(nonMatchingNameCookie, matchingCookie));
+		when(mockCookieStore.getCookies()).thenReturn(Arrays.asList(matchingDomainNonMatchingNameCookie, matchingDomainAndNameCookie));
 
 		//method under test
 		String result = simpleHttpClient.getFirstCookieValue(cookieDomain, cookieName);
