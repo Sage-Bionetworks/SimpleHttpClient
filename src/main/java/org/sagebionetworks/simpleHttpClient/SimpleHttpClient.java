@@ -19,6 +19,16 @@ public interface SimpleHttpClient {
 	SimpleHttpResponse get(SimpleHttpRequest request) throws ClientProtocolException, IOException;
 
 	/**
+	 * Performs an OPTIONS request
+	 * 
+	 * @param request
+	 * @return
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
+	 */
+	SimpleHttpResponse options(SimpleHttpRequest request) throws ClientProtocolException, IOException;
+
+	/**
 	 * Performs a POST request
 	 * 
 	 * @param request

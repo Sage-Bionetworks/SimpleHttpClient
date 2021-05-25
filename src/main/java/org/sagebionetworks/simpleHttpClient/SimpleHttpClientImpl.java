@@ -16,6 +16,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -74,6 +75,15 @@ public final class SimpleHttpClientImpl implements SimpleHttpClient{
 		HttpGet httpGet = new HttpGet(request.getUri());
 		copyHeaders(request, httpGet);
 		return execute(httpGet);
+	}
+
+	@Override
+	public SimpleHttpResponse options(SimpleHttpRequest request)
+			throws ClientProtocolException, IOException {
+		validateSimpleHttpRequest(request);
+		HttpOptions httpOptions = new HttpOptions(request.getUri());
+		copyHeaders(request, httpOptions);
+		return execute(httpOptions);
 	}
 
 	@Override
