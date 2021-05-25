@@ -1,6 +1,9 @@
 package org.sagebionetworks.simpleHttpClient;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -25,6 +28,7 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -155,6 +159,17 @@ public class SimpleHttpClientImplUnitTest {
 		ArgumentCaptor<HttpGet> captor = ArgumentCaptor.forClass(HttpGet.class);
 		verify(mockHttpClient).execute(captor.capture());
 		HttpGet captured = captor.getValue();
+		assertEquals(request.getUri(), captured.getURI().toString());
+		assertEquals("value", captured.getHeaders("name")[0].getValue());
+		verify(mockResponse).close();
+	}
+
+	@Test
+	public void testOptions() throws Exception {
+		assertEquals(response, simpleHttpClient.options(request));
+		ArgumentCaptor<HttpOptions> captor = ArgumentCaptor.forClass(HttpOptions.class);
+		verify(mockHttpClient).execute(captor.capture());
+		HttpOptions captured = captor.getValue();
 		assertEquals(request.getUri(), captured.getURI().toString());
 		assertEquals("value", captured.getHeaders("name")[0].getValue());
 		verify(mockResponse).close();
