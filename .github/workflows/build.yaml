@@ -7,7 +7,21 @@ on:
     branches: [ "develop" ]
 
 jobs:
-  build:
+  deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'corretto'
+          cache: maven
+      - name: deploy
+        run: echo mvn clean deploy
+  test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +32,4 @@ jobs:
           distribution: 'corretto'
           cache: maven
       - name: test
-        if: ${{ github.ref != 'refs/heads/develop' }}
         run: mvn clean test
-      - name: deploy
-        if: ${{ github.ref == 'refs/heads/develop' && github.event_name == 'push' }}
-        run: echo mvn clean deploy
